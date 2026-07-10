@@ -26,4 +26,4 @@ python manage.py migrate --noinput
 
 # Запускаємо сервер Daphne (підтримка WebSockets + HTTP)
 echo "Starting Daphne server on port ${PORT:-8080}..."
-daphne -b 0.0.0.0 -p ${PORT:-8080} store3d.asgi:application
+daphne -b :: -p ${PORT:-8080} -v 2 --access-log - store3d.asgi:application
