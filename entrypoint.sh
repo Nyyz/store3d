@@ -25,5 +25,5 @@ echo "Running database migrations..."
 python manage.py migrate --noinput
 
 # Запускаємо сервер Daphne (підтримка WebSockets + HTTP)
-echo "Starting Daphne server..."
-daphne -b 0.0.0.0 -p 8000 store3d.asgi:application
+echo "Starting Daphne server on port ${PORT:-8080}..."
+daphne -b 0.0.0.0 -p ${PORT:-8080} store3d.asgi:application
