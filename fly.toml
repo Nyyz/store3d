@@ -1,22 +1,32 @@
-app = "store3d-app"
-primary_region = "ams"
+# fly.toml app configuration file generated for store3d-2fdgew on 2026-07-10T07:52:24Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'store3d-2fdgew'
+primary_region = 'ams'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  PORT = "8000"
-  DEBUG = "False"
-  # SECRET_KEY потрібно буде задати через `fly secrets set SECRET_KEY="..."`
+  DEBUG = 'False'
+  PORT = '8000'
 
-[mounts]
-  source = "sqlite_data"
-  destination = "/app/data"
+[[mounts]]
+  source = 'sqlite_data'
+  destination = '/app/data'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
