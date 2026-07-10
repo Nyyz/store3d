@@ -29,3 +29,5 @@ ujson==5.13.0
 zope.interface==8.5
 whitenoise==6.6.0
 gunicorn==22.0.0
+dj-database-url==2.1.0
+psycopg-binary==3.1.18
