@@ -1,0 +1,213 @@
+{% extends "shop/base.html" %}
+
+{% block title %}💬 Чати підтримки — Store3D{% endblock %}
+
+{% block content %}
+<section class="admin-chat-page">
+    <div class="admin-chat-layout">
+        <!-- Sidebar: Chat Rooms List -->
+        <div class="admin-chat__sidebar" id="admin-chat-sidebar">
+            <div class="admin-chat__sidebar-header">
+                <h2 class="admin-chat__sidebar-title">💬 Чати підтримки</h2>
+                <span class="admin-chat__room-count">{{ rooms_data|length }}</span>
+            </div>
+
+            <div class="admin-chat__rooms" id="admin-chat-rooms">
+                {% for rd in rooms_data %}
+                <div class="admin-chat__room {% if rd.room.pk == active_room_id %}admin-chat__room--active{% endif %}"
+                     data-room-id="{{ rd.room.pk }}"
+                     onclick="selectRoom({{ rd.room.pk }}, '{{ rd.room.display_name|escapejs }}')">
+                    <div class="admin-chat__room-avatar">
+                        {{ rd.room.display_name|first|upper }}
+                    </div>
+                    <div class="admin-chat__room-info">
+                        <div class="admin-chat__room-name">{{ rd.room.display_name }}</div>
+                        <div class="admin-chat__room-last">
+                            {% if rd.last_message %}
+                                {{ rd.last_message.text|truncatechars:50 }}
+                            {% else %}
+                                <em>Немає повідомлень</em>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="admin-chat__room-meta">
+                        {% if rd.last_message %}
+                        <div class="admin-chat__room-time">{{ rd.last_message.created_at|date:"H:i" }}</div>
+                        {% endif %}
+                        {% if rd.unread_count > 0 %}
+                        <div class="admin-chat__room-badge">{{ rd.unread_count }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="admin-chat__empty-rooms">
+                    <div class="admin-chat__empty-icon">💬</div>
+                    <div>Поки що немає чатів</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="admin-chat__main" id="admin-chat-main">
+            <div class="admin-chat__placeholder" id="admin-chat-placeholder">
+                <div class="admin-chat__placeholder-icon">💬</div>
+                <div class="admin-chat__placeholder-title">Оберіть чат</div>
+                <div class="admin-chat__placeholder-text">Натисніть на будь-який чат зліва, щоб почати відповідати</div>
+            </div>
+
+            <div class="admin-chat__active" id="admin-chat-active" style="display:none">
+                <div class="admin-chat__active-header" id="admin-chat-header">
+                    <button class="admin-chat__back-btn" onclick="closeChatMobile()">←</button>
+                    <div class="admin-chat__active-avatar" id="admin-chat-avatar">?</div>
+                    <div class="admin-chat__active-name" id="admin-chat-name">—</div>
+                    <div class="admin-chat__active-status">
+                        <span class="chat-widget__status-dot"></span> Онлайн
+                    </div>
+                </div>
+
+                <div class="admin-chat__messages" id="admin-chat-messages">
+                    <!-- Messages loaded via WebSocket -->
+                </div>
+
+                <div class="admin-chat__input-area">
+                    <input type="text" class="admin-chat__input" id="admin-chat-input" placeholder="Напишіть відповідь..." autocomplete="off" onkeydown="if(event.key==='Enter')sendAdminMessage()">
+                    <button class="admin-chat__send-btn" onclick="sendAdminMessage()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let adminSocket = null;
+let currentRoomId = null;
+
+function selectRoom(roomId, displayName) {
+    // Close previous connection
+    if (adminSocket) {
+        adminSocket.close();
+        adminSocket = null;
+    }
+
+    currentRoomId = roomId;
+
+    // UI updates
+    document.getElementById('admin-chat-placeholder').style.display = 'none';
+    document.getElementById('admin-chat-active').style.display = 'flex';
+    document.getElementById('admin-chat-name').textContent = displayName;
+    document.getElementById('admin-chat-avatar').textContent = displayName.charAt(0).toUpperCase();
+    document.getElementById('admin-chat-messages').innerHTML = '';
+
+    // Highlight active room
+    document.querySelectorAll('.admin-chat__room').forEach(r => r.classList.remove('admin-chat__room--active'));
+    const activeRoom = document.querySelector(`.admin-chat__room[data-room-id="${roomId}"]`);
+    if (activeRoom) {
+        activeRoom.classList.add('admin-chat__room--active');
+        // Remove unread badge
+        const badge = activeRoom.querySelector('.admin-chat__room-badge');
+        if (badge) badge.remove();
+    }
+
+    // Mobile: show main area
+    document.getElementById('admin-chat-main').classList.add('mobile-active');
+
+    // Connect WebSocket
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    adminSocket = new WebSocket(protocol + '//' + window.location.host + '/ws/chat/admin/' + roomId + '/');
+
+    adminSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'history') {
+            data.messages.forEach(function(m) {
+                appendAdminMessage(m.message, m.sender_type, m.timestamp);
+            });
+            scrollAdminMessages();
+        } else if (data.type === 'message') {
+            if (data.sender_type === 'customer' || data.sender_type === 'admin') {
+                appendAdminMessage(data.message, data.sender_type, data.timestamp);
+                scrollAdminMessages();
+            }
+        } else if (data.type === 'notification') {
+            // New message in another room
+            if (data.room_id !== currentRoomId) {
+                const roomEl = document.querySelector(`.admin-chat__room[data-room-id="${data.room_id}"]`);
+                if (roomEl) {
+                    // Update last message
+                    const lastMsg = roomEl.querySelector('.admin-chat__room-last');
+                    if (lastMsg) lastMsg.textContent = data.message.substring(0, 50);
+                    const timeEl = roomEl.querySelector('.admin-chat__room-time');
+                    if (timeEl) timeEl.textContent = data.timestamp;
+
+                    // Add/update unread badge
+                    let badge = roomEl.querySelector('.admin-chat__room-badge');
+                    if (!badge) {
+                        badge = document.createElement('div');
+                        badge.className = 'admin-chat__room-badge';
+                        badge.textContent = '1';
+                        roomEl.querySelector('.admin-chat__room-meta').appendChild(badge);
+                    } else {
+                        badge.textContent = parseInt(badge.textContent) + 1;
+                    }
+
+                    // Move room to top
+                    roomEl.parentNode.prepend(roomEl);
+                } else {
+                    // New room — reload rooms
+                    location.reload();
+                }
+            }
+        }
+    };
+
+    adminSocket.onclose = function() {
+        adminSocket = null;
+    };
+}
+
+function appendAdminMessage(text, senderType, timestamp) {
+    const msgs = document.getElementById('admin-chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg chat-msg--' + senderType;
+
+    const escapedText = document.createElement('div');
+    escapedText.textContent = text;
+
+    div.innerHTML =
+        '<div class="chat-msg__bubble">' + escapedText.innerHTML + '</div>' +
+        '<div class="chat-msg__time">' + (timestamp || '') + '</div>';
+    msgs.appendChild(div);
+}
+
+function sendAdminMessage() {
+    const input = document.getElementById('admin-chat-input');
+    const text = input.value.trim();
+    if (!text || !adminSocket) return;
+    adminSocket.send(JSON.stringify({message: text}));
+    input.value = '';
+}
+
+function scrollAdminMessages() {
+    const msgs = document.getElementById('admin-chat-messages');
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function closeChatMobile() {
+    document.getElementById('admin-chat-main').classList.remove('mobile-active');
+}
+
+// Auto-select room if specified in URL
+{% if active_room_id %}
+document.addEventListener('DOMContentLoaded', function() {
+    const roomEl = document.querySelector('.admin-chat__room[data-room-id="{{ active_room_id }}"]');
+    if (roomEl) {
+        roomEl.click();
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

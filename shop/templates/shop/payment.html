@@ -1,0 +1,87 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Оплата замовлення — Store3D{% endblock %}
+
+{% block content %}
+<section class="checkout-page">
+    <div class="container" style="max-width: 600px; margin: 0 auto; text-align: center;">
+        <div class="checkout-success__card">
+            <h1 class="checkout-page__title" style="margin-bottom: 20px;" data-i18n="payment.title">Оплата замовлення #{{ order.pk }}</h1>
+            
+            <p style="font-size: 1.2rem; margin-bottom: 30px;">
+                <span data-i18n="payment.amount_label">Сума до сплати:</span>
+                <strong class="price-display" data-price-uah="{{ order.total_price }}">{{ order.total_price }} ₴</strong>
+            </p>
+
+            {% if order.payment_method == 'bank' %}
+                <div style="background: var(--bg-glass); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px; text-align: left; margin-bottom: 30px;">
+                    <h3 style="margin-top: 0; color: var(--accent-primary);" data-i18n="payment.bank.details">Реквізити для оплати (IBAN)</h3>
+                    <p data-i18n="payment.bank.instruction">Будь ласка, здійсніть переказ за вказаними реквізитами. У призначенні платежу вкажіть номер замовлення.</p>
+                    <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
+                    <p><strong>IBAN:</strong> UA123456789000000000000000000</p>
+                    <p><strong data-i18n="payment.bank.recipient">Одержувач:</strong> ФОП Петренко П.П.</p>
+                    <p><strong data-i18n="payment.bank.purpose">Призначення:</strong> <span data-i18n="payment.bank.purpose_text">Оплата замовлення</span> #{{ order.pk }}</p>
+                </div>
+                
+                <form action="{% url 'shop:payment_process' order.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn--primary btn--lg" style="width: 100%;" data-i18n="payment.btn.paid">Я сплатив / Підтвердити</button>
+                </form>
+
+            {% elif order.payment_method == 'paypal' %}
+                <div style="background: var(--bg-glass); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px; margin-bottom: 30px;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">🔵</div>
+                    <h3 style="margin-top: 0; margin-bottom: 20px;">PayPal Checkout</h3>
+                    
+                    <form action="{% url 'shop:payment_process' order.id %}" method="POST">
+                        {% csrf_token %}
+                        <!-- Mock PayPal button -->
+                        <button type="submit" class="btn btn--lg" style="width: 100%; background: #0070ba; color: white; border: none;" data-i18n="payment.btn.paypal">Pay with PayPal</button>
+                    </form>
+                </div>
+
+            {% elif order.payment_method == 'card' %}
+                <div style="background: var(--bg-glass); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px; text-align: left; margin-bottom: 30px;">
+                    <h3 style="margin-top: 0; margin-bottom: 20px;" data-i18n="payment.card.title">Оплата карткою (Імітація)</h3>
+                    
+                    <form action="{% url 'shop:payment_process' order.id %}" method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label class="form-group__label" data-i18n="payment.card.number">Номер картки</label>
+                            <input type="text" class="form-group__input" placeholder="0000 0000 0000 0000" required>
+                        </div>
+                        
+                        <div style="display: flex; gap: 16px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-group__label" data-i18n="payment.card.expiry">Термін дії</label>
+                                <input type="text" class="form-group__input" placeholder="MM/YY" required>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-group__label">CVV</label>
+                                <input type="password" class="form-group__input" placeholder="123" required>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn--primary btn--lg" style="width: 100%; margin-top: 10px;" data-i18n="payment.btn.pay">Сплатити</button>
+                    </form>
+                </div>
+            {% elif order.payment_method == 'cod' %}
+                <div style="background: var(--bg-glass); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px; text-align: left; margin-bottom: 30px;">
+                    <h3 style="margin-top: 0; margin-bottom: 20px;" data-i18n="payment.cod.title">Оплата при отриманні</h3>
+                    <p data-i18n="payment.cod.desc">Ви обрали оплату при отриманні. Будь ласка, підтвердіть замовлення.</p>
+                    
+                    <form action="{% url 'shop:payment_process' order.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn--primary btn--lg" style="width: 100%; margin-top: 10px;" data-i18n="payment.btn.confirm">Підтвердити замовлення</button>
+                    </form>
+                </div>
+            {% endif %}
+            
+            <div style="margin-top: 20px;">
+                <a href="{% url 'shop:checkout' %}" class="btn btn--outline" data-i18n="payment.btn.cancel">Повернутись назад</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

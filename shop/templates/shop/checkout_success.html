@@ -1,0 +1,22 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Замовлення оформлено — Store3D{% endblock %}
+
+{% block content %}
+<section class="checkout-success">
+    <div class="container">
+        <div class="checkout-success__card">
+            <div class="checkout-success__icon">🎉</div>
+            <h1 class="checkout-success__title" data-i18n="success.title">Замовлення оформлено!</h1>
+            <p class="checkout-success__text" data-i18n="success.text">
+                Дякуємо за покупку! Ваше замовлення прийнято в обробку.
+                Ми зв'яжемось з вами найближчим часом для підтвердження.
+            </p>
+            <div class="checkout-success__actions">
+                <a href="{% url 'shop:catalog' %}" class="btn btn--primary btn--lg" data-i18n="success.continue">Продовжити покупки</a>
+                <a href="{% url 'shop:home' %}" class="btn btn--secondary btn--lg" data-i18n="success.home">На головну</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

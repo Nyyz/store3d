@@ -1,0 +1,104 @@
+{% extends "shop/base.html" %}
+
+{% block title %}{{ product.name }} — Store3D{% endblock %}
+
+{% block content %}
+<section class="product-detail">
+    <div class="container">
+        <div class="product-detail__grid">
+            <!-- Image -->
+            <div class="product-detail__image-wrap">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-detail__image">
+                {% else %}
+                    <div class="product-detail__image-placeholder">🎲</div>
+                {% endif %}
+            </div>
+
+            <!-- Info -->
+            <div class="product-detail__info">
+                <nav class="product-detail__breadcrumb">
+                    <a href="{% url 'shop:home' %}" data-i18n="breadcrumb.home">Головна</a>
+                    <span>›</span>
+                    <a href="{% url 'shop:catalog' %}" data-i18n="breadcrumb.catalog">Каталог</a>
+                    <span>›</span>
+                    <span>{{ product.name }}</span>
+                </nav>
+
+                <h1 class="product-detail__name">{{ product.name }}</h1>
+                <div class="product-detail__price"><span class="price-display" data-price-uah="{{ product.price }}">{{ product.price }}</span> ₴</div>
+
+                {% if product.stock > 0 %}
+                    <div class="product-detail__stock product-detail__stock--in">
+                        ✅ <span data-i18n="product.instock">В наявності</span> ({{ product.stock }} шт.)
+                    </div>
+                {% else %}
+                    <div class="product-detail__stock product-detail__stock--out">
+                        ❌ <span data-i18n="product.outofstock">Немає в наявності</span>
+                    </div>
+                {% endif %}
+
+                <p class="product-detail__description">{{ product.description }}</p>
+
+                {% if product.stock > 0 %}
+                <div class="product-detail__quantity">
+                    <span class="product-detail__quantity-label" data-i18n="product.quantity">Кількість:</span>
+                    <div class="product-detail__quantity-controls">
+                        <button class="product-detail__quantity-btn" onclick="changeQuantity(-1)">−</button>
+                        <span class="product-detail__quantity-value" id="quantity-value" data-max="{{ product.stock }}" data-product-id="{{ product.pk }}">1</span>
+                        <button class="product-detail__quantity-btn" onclick="changeQuantity(1)">+</button>
+                    </div>
+                </div>
+
+                <div class="product-detail__actions">
+                    <button class="btn btn--primary btn--lg" onclick="addToCartFromDetail()" data-i18n="product.addtocart">
+                        🛒 Додати до кошика
+                    </button>
+                </div>
+                {% else %}
+                <div class="product-detail__actions">
+                    <button class="btn btn--secondary btn--lg" disabled data-i18n="product.outofstock">
+                        Немає в наявності
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Related Products -->
+        {% if related_products %}
+        <div class="related-section">
+            <div class="section__header">
+                <h2 class="section__title" data-i18n="product.related">Вам також може сподобатись</h2>
+            </div>
+            <div class="products-grid">
+                {% for rp in related_products %}
+                <div class="product-card reveal">
+                    <a href="{% url 'shop:product_detail' rp.pk %}">
+                        <div class="product-card__image-wrap">
+                            {% if rp.image %}
+                                <img src="{{ rp.image.url }}" alt="{{ rp.name }}" class="product-card__image" loading="lazy">
+                            {% else %}
+                                <div class="product-card__image-placeholder">🎲</div>
+                            {% endif %}
+                        </div>
+                    </a>
+                    <div class="product-card__body">
+                        <h3 class="product-card__name">
+                            <a href="{% url 'shop:product_detail' rp.pk %}">{{ rp.name }}</a>
+                        </h3>
+                        <div class="product-card__footer">
+                            <span class="product-card__price"><span class="price-display" data-price-uah="{{ rp.price }}">{{ rp.price }}</span> ₴</span>
+                            {% if rp.stock > 0 %}
+                            <button class="product-card__add-btn" data-product-id="{{ rp.pk }}" onclick="addToCart({{ rp.pk }})">+</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

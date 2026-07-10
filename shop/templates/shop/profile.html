@@ -1,0 +1,44 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Профіль — Store3D{% endblock %}
+
+{% block content %}
+<section class="profile-page">
+    <div class="container">
+        <div class="profile-card">
+            <div class="profile-card__avatar">
+                {{ user.first_name|first|default:"?" }}
+            </div>
+            <h1 class="profile-card__name">{{ user.first_name|default:"Користувач" }}</h1>
+            <p class="profile-card__email">{{ user.email }}</p>
+
+            <div class="profile-card__details">
+                <div class="profile-card__detail-row">
+                    <span class="profile-card__detail-label">Email</span>
+                    <span class="profile-card__detail-value">{{ user.email }}</span>
+                </div>
+                <div class="profile-card__detail-row">
+                    <span class="profile-card__detail-label" data-i18n="profile.name.label">Ім'я</span>
+                    <span class="profile-card__detail-value">{{ user.first_name|default:"—" }}</span>
+                </div>
+                <div class="profile-card__detail-row">
+                    <span class="profile-card__detail-label" data-i18n="profile.country.label">Країна</span>
+                    <span class="profile-card__detail-value">{{ user.get_country_display }}</span>
+                </div>
+                <div class="profile-card__detail-row">
+                    <span class="profile-card__detail-label" data-i18n="profile.verified.label">Email підтверджено</span>
+                    <span class="profile-card__detail-value">{% if user.is_email_verified %}✅ Так{% else %}❌ Ні{% endif %}</span>
+                </div>
+                <div class="profile-card__detail-row">
+                    <span class="profile-card__detail-label" data-i18n="profile.date.label">Дата реєстрації</span>
+                    <span class="profile-card__detail-value">{{ user.date_joined|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 32px;">
+                <a href="{% url 'shop:logout' %}" class="btn btn--secondary" data-i18n="profile.logout">Вийти з акаунту</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

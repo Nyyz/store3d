@@ -1,0 +1,70 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Кошик — Store3D{% endblock %}
+
+{% block content %}
+<section class="cart-page">
+    <div class="container">
+        <h1 class="cart-page__title" data-i18n="cart.title">🛒 Кошик</h1>
+
+        {% if cart_items %}
+        <div class="cart-layout">
+            <!-- Cart Items -->
+            <div class="cart-items">
+                {% for item in cart_items %}
+                <div class="cart-item" data-cart-item="{{ item.product.pk }}">
+                    <div class="cart-item__image">
+                        <a href="{% url 'shop:product_detail' item.product.pk %}">
+                            {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                            {% else %}
+                                <div class="cart-item__image-placeholder">🎲</div>
+                            {% endif %}
+                        </a>
+                    </div>
+                    <div class="cart-item__info">
+                        <div class="cart-item__name">
+                            <a href="{% url 'shop:product_detail' item.product.pk %}">{{ item.product.name }}</a>
+                        </div>
+                        <div class="cart-item__price"><span class="price-display" data-price-uah="{{ item.product.price }}">{{ item.product.price }}</span> ₴ <span data-i18n="cart.peritem">за шт.</span></div>
+                    </div>
+                    <div class="cart-item__quantity">
+                        <button class="cart-item__qty-btn" onclick="updateCartItem({{ item.product.pk }}, {{ item.quantity }} - 1)">−</button>
+                        <span class="cart-item__qty-value">{{ item.quantity }}</span>
+                        <button class="cart-item__qty-btn" onclick="updateCartItem({{ item.product.pk }}, {{ item.quantity }} + 1)">+</button>
+                    </div>
+                    <div class="cart-item__subtotal"><span class="price-display" data-price-uah="{{ item.subtotal }}">{{ item.subtotal }}</span> ₴</div>
+                    <button class="cart-item__remove" onclick="removeFromCart({{ item.product.pk }})" title="Видалити">
+                        🗑️
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Summary -->
+            <div class="cart-summary">
+                <h2 class="cart-summary__title" data-i18n="cart.summary">Підсумок</h2>
+                <div class="cart-summary__row">
+                    <span class="cart-summary__row--label" data-i18n="cart.items">Товарів:</span>
+                    <span>{{ cart_items|length }}</span>
+                </div>
+                <div class="cart-summary__row cart-summary__row--total">
+                    <span data-i18n="cart.total">Разом:</span>
+                    <span class="cart-summary__value price-display" data-price-uah="{{ total }}">{{ total }} ₴</span>
+                </div>
+                <a href="{% url 'shop:checkout' %}" class="btn btn--primary btn--lg cart-summary__btn" data-i18n="cart.checkout">
+                    Оформити замовлення
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="cart-empty">
+            <div class="cart-empty__icon">🛒</div>
+            <h2 class="cart-empty__title" data-i18n="cart.empty.title">Кошик порожній</h2>
+            <p class="cart-empty__text" data-i18n="cart.empty.text">Додайте фігурки з каталогу, щоб побачити їх тут</p>
+            <a href="{% url 'shop:catalog' %}" class="btn btn--primary btn--lg" data-i18n="cart.empty.cta">Перейти до каталогу</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

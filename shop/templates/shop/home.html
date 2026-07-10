@@ -1,0 +1,130 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Store3D — Магазин 3D-друкованих фігурок{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero__particles" id="hero-particles"></div>
+    <div class="hero__content">
+        <div class="hero__badge" data-i18n="hero.badge">
+            ✨ Ручна робота · 3D-друк · Преміум якість
+        </div>
+        <h1 class="hero__title">
+            <span data-i18n="hero.title.1">Колекційні фігурки</span><br>
+            <span class="hero__title-highlight" data-i18n="hero.title.2">нового покоління</span>
+        </h1>
+        <p class="hero__subtitle" data-i18n="hero.subtitle">
+            Ексклюзивні 3D-друковані фігурки героїв ігор, аніме та фентезі.
+            Високоточна деталізація, ручна обробка, екологічні матеріали.
+        </p>
+        <div class="hero__actions">
+            <a href="{% url 'shop:catalog' %}" class="btn btn--primary btn--lg" data-i18n="hero.cta.catalog">
+                🛍️ Переглянути каталог
+            </a>
+            <a href="#features" class="btn btn--secondary btn--lg" data-i18n="hero.cta.more">
+                Дізнатися більше
+            </a>
+        </div>
+        <div class="hero__stats">
+            <div class="hero__stat">
+                <div class="hero__stat-value">{{ total_products }}+</div>
+                <div class="hero__stat-label" data-i18n="hero.stat.figurines">Фігурок</div>
+            </div>
+            <div class="hero__stat">
+                <div class="hero__stat-value">100%</div>
+                <div class="hero__stat-label" data-i18n="hero.stat.3dprint">3D-друк</div>
+            </div>
+            <div class="hero__stat">
+                <div class="hero__stat-value">🇺🇦</div>
+                <div class="hero__stat-label" data-i18n="hero.stat.ukraine">Зроблено в Україні</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products -->
+{% if featured_products %}
+<section class="section" id="featured">
+    <div class="container">
+        <div class="section__header reveal">
+            <h2 class="section__title" data-i18n="section.featured">🔥 Популярні фігурки</h2>
+            <p class="section__subtitle" data-i18n="section.featured.sub">Найкращі моделі з нашої колекції</p>
+        </div>
+        <div class="products-grid">
+            {% for product in featured_products %}
+            <div class="product-card reveal" style="transition-delay: {{ forloop.counter0 }}00ms;">
+                <a href="{% url 'shop:product_detail' product.pk %}">
+                    <div class="product-card__image-wrap">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card__image" loading="lazy">
+                        {% else %}
+                            <div class="product-card__image-placeholder">🎲</div>
+                        {% endif %}
+                        {% if product.stock > 5 %}
+                            <span class="product-card__stock-badge product-card__stock-badge--in-stock" data-i18n="product.instock">В наявності</span>
+                        {% elif product.stock > 0 %}
+                            <span class="product-card__stock-badge product-card__stock-badge--low-stock">Залишилось {{ product.stock }} шт.</span>
+                        {% else %}
+                            <span class="product-card__stock-badge product-card__stock-badge--out-of-stock" data-i18n="product.outofstock">Немає в наявності</span>
+                        {% endif %}
+                    </div>
+                </a>
+                <div class="product-card__body">
+                    <h3 class="product-card__name">
+                        <a href="{% url 'shop:product_detail' product.pk %}">{{ product.name }}</a>
+                    </h3>
+                    <p class="product-card__description">{{ product.description|truncatechars:80 }}</p>
+                    <div class="product-card__footer">
+                        <span class="product-card__price"><span class="price-display" data-price-uah="{{ product.price }}">{{ product.price }}</span> ₴</span>
+                        {% if product.stock > 0 %}
+                        <button class="product-card__add-btn" data-product-id="{{ product.pk }}" onclick="addToCart({{ product.pk }})" title="Додати до кошика">
+                            +
+                        </button>
+                        {% else %}
+                        <button class="product-card__add-btn" disabled title="Немає в наявності">✕</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center" style="margin-top: 48px;">
+            <a href="{% url 'shop:catalog' %}" class="btn btn--secondary btn--lg" data-i18n="section.viewall">Переглянути весь каталог →</a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Features -->
+<section class="section" id="features">
+    <div class="container">
+        <div class="section__header reveal">
+            <h2 class="section__title" data-i18n="section.whyus">Чому обирають нас</h2>
+            <p class="section__subtitle" data-i18n="section.whyus.sub">Ми створюємо не просто фігурки — ми створюємо мистецтво</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="feature-card__icon">🖨️</div>
+                <h3 class="feature-card__title" data-i18n="feature.3dprint.title">3D-друк високої якості</h3>
+                <p class="feature-card__text" data-i18n="feature.3dprint.text">Використовуємо сучасні технології FDM та SLA для максимальної деталізації кожної моделі.</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 100ms;">
+                <div class="feature-card__icon">🎨</div>
+                <h3 class="feature-card__title" data-i18n="feature.paint.title">Ручне фарбування</h3>
+                <p class="feature-card__text" data-i18n="feature.paint.text">Кожна фігурка проходить ретельну ручну обробку та фарбування професійними фарбами.</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 200ms;">
+                <div class="feature-card__icon">🌱</div>
+                <h3 class="feature-card__title" data-i18n="feature.eco.title">Еко-матеріали</h3>
+                <p class="feature-card__text" data-i18n="feature.eco.text">Використовуємо PLA — біорозкладний пластик з кукурудзяного крохмалю. Безпечно для довкілля.</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 300ms;">
+                <div class="feature-card__icon">📦</div>
+                <h3 class="feature-card__title" data-i18n="feature.delivery.title">Надійна доставка</h3>
+                <p class="feature-card__text" data-i18n="feature.delivery.text">Кожна фігурка надійно упакована для безпечної доставки по всій Україні та за кордон.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

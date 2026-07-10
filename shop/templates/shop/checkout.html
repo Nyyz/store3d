@@ -1,0 +1,755 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Оформлення замовлення — Store3D{% endblock %}
+
+{% block content %}
+<!-- intl-tel-input -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/css/intlTelInput.css">
+<style>
+    .iti { width: 100%; }
+</style>
+
+<section class="checkout-page">
+    <div class="container">
+        <h1 class="checkout-page__title" data-i18n="checkout.title">📦 Оформлення замовлення</h1>
+
+        <form method="post" class="checkout-layout" id="checkout-form">
+            {% csrf_token %}
+
+            <!-- Left: Form -->
+            <div class="checkout-form">
+                <!-- Contact Info -->
+                <div class="checkout-section">
+                    <h2 class="checkout-section__title">
+                        <span class="checkout-section__icon">👤</span>
+                        <span data-i18n="checkout.contact">Контактні дані</span>
+                    </h2>
+
+                    <div class="checkout-form__row">
+                        <div class="form-group">
+                            <label class="form-group__label" for="first_name" data-i18n="checkout.firstname">Ім'я *</label>
+                            <input type="text" class="form-group__input" id="first_name" name="first_name"
+                                   value="{{ form_data.first_name|default:'' }}" placeholder="Іван" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-group__label" for="last_name" data-i18n="checkout.lastname">Прізвище *</label>
+                            <input type="text" class="form-group__input" id="last_name" name="last_name"
+                                   value="{{ form_data.last_name|default:'' }}" placeholder="Петренко" required>
+                        </div>
+                    </div>
+
+                    <div class="checkout-form__row">
+                        <div class="form-group">
+                            <label class="form-group__label" for="phone" data-i18n="checkout.phone">Телефон *</label>
+                            <input type="tel" class="form-group__input" id="phone" name="phone"
+                                   value="{{ form_data.phone|default:'' }}" placeholder="+380 XX XXX XX XX" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-group__label" for="email" data-i18n="checkout.email">Email *</label>
+                            <input type="email" class="form-group__input" id="email" name="email"
+                                   value="{{ form_data.email|default:'' }}" placeholder="email@example.com" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Service Selection -->
+                <div class="checkout-section">
+                    <h2 class="checkout-section__title">
+                        <span class="checkout-section__icon">🚚</span>
+                        <span data-i18n="checkout.delivery">Спосіб доставки</span>
+                    </h2>
+
+                    <div class="delivery-selector">
+                        <label class="delivery-option delivery-option--active" id="delivery-opt-np">
+                            <input type="radio" name="delivery_service" value="nova_poshta" checked
+                                   onchange="switchDelivery('nova_poshta')">
+                            <div class="delivery-option__content">
+                                <div class="delivery-option__logo">📮</div>
+                                <div class="delivery-option__info">
+                                    <div class="delivery-option__name" data-i18n="checkout.np">Нова Пошта</div>
+                                    <div class="delivery-option__desc" data-i18n="checkout.np.desc">Доставка по Україні</div>
+                                </div>
+                                <div class="delivery-option__check">✓</div>
+                            </div>
+                        </label>
+
+                        <label class="delivery-option" id="delivery-opt-ppl">
+                            <input type="radio" name="delivery_service" value="ppl"
+                                   onchange="switchDelivery('ppl')"
+                                   {% if form_data.delivery_service == 'ppl' %}checked{% endif %}>
+                            <div class="delivery-option__content">
+                                <div class="delivery-option__logo">🌍</div>
+                                <div class="delivery-option__info">
+                                    <div class="delivery-option__name" data-i18n="checkout.ppl">PPL</div>
+                                    <div class="delivery-option__desc" data-i18n="checkout.ppl.desc">Міжнародна доставка (CZ, PL, SK)</div>
+                                </div>
+                                <div class="delivery-option__check">✓</div>
+                            </div>
+                        </label>
+
+                        <label class="delivery-option" id="delivery-opt-meest">
+                            <input type="radio" name="delivery_service" value="meest"
+                                   onchange="switchDelivery('meest')"
+                                   {% if form_data.delivery_service == 'meest' %}checked{% endif %}>
+                            <div class="delivery-option__content">
+                                <div class="delivery-option__logo">✈️</div>
+                                <div class="delivery-option__info">
+                                    <div class="delivery-option__name" data-i18n="checkout.meest">Meest Пошта</div>
+                                    <div class="delivery-option__desc" data-i18n="checkout.meest.desc">Міжнародна доставка (Світ)</div>
+                                </div>
+                                <div class="delivery-option__check">✓</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Nova Poshta Delivery Block -->
+                <div class="checkout-section" id="delivery-block-np">
+                    <h2 class="checkout-section__title">
+                        <span class="checkout-section__icon">📮</span>
+                        <span data-i18n="checkout.np">Нова Пошта</span>
+                    </h2>
+
+                    <div class="form-group">
+                        <label class="form-group__label" for="np_city_input" data-i18n="checkout.np.city">Місто *</label>
+                        <div class="np-autocomplete" id="np-city-wrapper">
+                            <input type="text" class="form-group__input" id="np_city_input"
+                                   data-i18n-placeholder="checkout.np.city.placeholder"
+                                   placeholder="Почніть вводити назву міста..."
+                                   autocomplete="off"
+                                   value="{{ form_data.np_city|default:'' }}">
+                            <input type="hidden" name="np_city" id="np_city" value="{{ form_data.np_city|default:'' }}">
+                            <input type="hidden" name="np_city_ref" id="np_city_ref" value="{{ form_data.np_city_ref|default:'' }}">
+                            <div class="np-autocomplete__dropdown" id="np-city-dropdown"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-group__label" for="np_warehouse_select" data-i18n="checkout.np.warehouse">Відділення *</label>
+                        <div class="np-warehouse-wrap">
+                            <select class="form-group__select" id="np_warehouse_select" disabled>
+                                <option value="" data-i18n="checkout.np.warehouse.select">— Спочатку оберіть місто —</option>
+                            </select>
+                            <input type="hidden" name="np_warehouse" id="np_warehouse" value="{{ form_data.np_warehouse|default:'' }}">
+                            <input type="hidden" name="np_warehouse_ref" id="np_warehouse_ref" value="{{ form_data.np_warehouse_ref|default:'' }}">
+                            <div class="np-warehouse__loading" id="np-warehouse-loading" style="display:none">
+                                <div class="np-warehouse__spinner"></div>
+                                Завантаження відділень...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PPL Delivery Block (hidden by default) -->
+                <div class="checkout-section" id="delivery-block-ppl" style="display:none">
+                    <h2 class="checkout-section__title">
+                        <span class="checkout-section__icon">🌍</span>
+                        PPL — Parcel Service
+                    </h2>
+
+                    <div class="form-group">
+                        <label class="form-group__label" for="ppl_city_input" data-i18n="checkout.ppl.city">Місто *</label>
+                        <div class="np-autocomplete" id="ppl-city-wrapper">
+                            <input type="text" class="form-group__input" id="ppl_city_input"
+                                   data-i18n-placeholder="checkout.ppl.city.placeholder"
+                                   placeholder="Почніть вводити назву міста..."
+                                   autocomplete="off"
+                                   value="{{ form_data.ppl_city|default:'' }}">
+                            <input type="hidden" name="ppl_city" id="ppl_city" value="{{ form_data.ppl_city|default:'' }}">
+                            <div class="np-autocomplete__dropdown" id="ppl-city-dropdown"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-group__label" for="ppl_point_select" data-i18n="checkout.ppl.point">Пункт видачі *</label>
+                        <div class="np-warehouse-wrap">
+                            <select class="form-group__select" id="ppl_point_select" disabled>
+                                <option value="" data-i18n="checkout.ppl.point.select">— Спочатку оберіть місто —</option>
+                            </select>
+                            <input type="hidden" name="ppl_point" id="ppl_point" value="{{ form_data.ppl_point|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meest Delivery Block (hidden by default) -->
+                <div class="checkout-section" id="delivery-block-meest" style="display:none">
+                    <h2 class="checkout-section__title">
+                        <span class="checkout-section__icon">✈️</span>
+                        <span data-i18n="checkout.meest">Meest Пошта</span>
+                    </h2>
+
+                    <div class="form-group">
+                        <label class="form-group__label" for="meest_country" data-i18n="checkout.meest.country">Країна *</label>
+                        <input type="text" class="form-group__input" id="meest_country" name="meest_country"
+                               data-i18n-placeholder="checkout.meest.country.placeholder" placeholder="Наприклад: Німеччина"
+                               value="{{ form_data.meest_country|default:'' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-group__label" for="meest_city" data-i18n="checkout.meest.city">Місто *</label>
+                        <input type="text" class="form-group__input" id="meest_city" name="meest_city"
+                               data-i18n-placeholder="checkout.meest.city.placeholder" placeholder="Назва міста"
+                               value="{{ form_data.meest_city|default:'' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-group__label" for="meest_address" data-i18n="checkout.meest.address">Адреса або відділення *</label>
+                        <input type="text" class="form-group__input" id="meest_address" name="meest_address"
+                               data-i18n-placeholder="checkout.meest.address.placeholder" placeholder="Повна адреса або номер відділення"
+                               value="{{ form_data.meest_address|default:'' }}">
+                    </div>
+                </div>
+
+                <!-- Comment -->
+                <div class="checkout-section">
+                    <h2 class="checkout-section__title">
+                        <span class="checkout-section__icon">📝</span>
+                        <span data-i18n="checkout.comment">Коментар до замовлення</span>
+                    </h2>
+                    <div class="form-group">
+                        <textarea class="form-group__input form-group__textarea" name="comment" id="comment"
+                                  data-i18n-placeholder="checkout.comment.placeholder"
+                                  placeholder="Додаткова інформація до замовлення (необов'язково)"
+                                  rows="3">{{ form_data.comment|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="checkout-section">
+                    <h2 class="checkout-section__title">
+                        <span class="checkout-section__icon">💳</span>
+                        <span data-i18n="checkout.payment">Спосіб оплати</span>
+                    </h2>
+
+                    <div class="delivery-selector">
+                        <label class="delivery-option delivery-option--active" id="payment-opt-bank">
+                            <input type="radio" name="payment_method" value="bank" checked
+                                   onchange="switchPayment('bank')">
+                            <div class="delivery-option__content">
+                                <div class="delivery-option__logo">🏦</div>
+                                <div class="delivery-option__info">
+                                    <div class="delivery-option__name" data-i18n="checkout.payment.bank">Банківський рахунок</div>
+                                    <div class="delivery-option__desc" data-i18n="checkout.payment.bank.desc">Оплата за реквізитами IBAN</div>
+                                </div>
+                                <div class="delivery-option__check">✓</div>
+                            </div>
+                        </label>
+
+                        <label class="delivery-option" id="payment-opt-paypal" style="opacity: 0.6;">
+                            <input type="radio" name="payment_method" value="paypal" disabled
+                                   onchange="switchPayment('paypal')"
+                                   {% if form_data.payment_method == 'paypal' %}checked{% endif %}>
+                            <div class="delivery-option__content">
+                                <div class="delivery-option__logo">🔵</div>
+                                <div class="delivery-option__info">
+                                    <div class="delivery-option__name">PayPal <span style="color:red; font-size: 0.8rem;">(тимчасово не працює)</span></div>
+                                    <div class="delivery-option__desc" data-i18n="checkout.payment.paypal.desc">Швидко та безпечно</div>
+                                </div>
+                                <div class="delivery-option__check">✓</div>
+                            </div>
+                        </label>
+
+                        <label class="delivery-option" id="payment-opt-card" style="opacity: 0.6;">
+                            <input type="radio" name="payment_method" value="card" disabled
+                                   onchange="switchPayment('card')"
+                                   {% if form_data.payment_method == 'card' %}checked{% endif %}>
+                            <div class="delivery-option__content">
+                                <div class="delivery-option__logo">💳</div>
+                                <div class="delivery-option__info">
+                                    <div class="delivery-option__name" data-i18n="checkout.payment.card">Картка <span style="color:red; font-size: 0.8rem;">(тимчасово не працює)</span></div>
+                                    <div class="delivery-option__desc" data-i18n="checkout.payment.card.desc">Visa / Mastercard</div>
+                                </div>
+                                <div class="delivery-option__check">✓</div>
+                            </div>
+                        </label>
+
+                        <label class="delivery-option" id="payment-opt-cod">
+                            <input type="radio" name="payment_method" value="cod"
+                                   onchange="switchPayment('cod')"
+                                   {% if form_data.payment_method == 'cod' %}checked{% endif %}>
+                            <div class="delivery-option__content">
+                                <div class="delivery-option__logo">📦</div>
+                                <div class="delivery-option__info">
+                                    <div class="delivery-option__name" data-i18n="checkout.payment.cod">Оплата при отриманні</div>
+                                    <div class="delivery-option__desc" data-i18n="checkout.payment.cod.desc">Готівкою або карткою при отриманні</div>
+                                </div>
+                                <div class="delivery-option__check">✓</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Order Summary -->
+            <div class="checkout-summary">
+                <div class="checkout-summary__card">
+                    <h2 class="checkout-summary__title" data-i18n="checkout.summary">Ваше замовлення</h2>
+
+                    <div class="checkout-summary__items">
+                        {% for item in cart_items %}
+                        <div class="checkout-summary__item">
+                            <div class="checkout-summary__item-image">
+                                {% if item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                                {% else %}
+                                    <div class="checkout-summary__item-placeholder">🎲</div>
+                                {% endif %}
+                            </div>
+                            <div class="checkout-summary__item-info">
+                                <div class="checkout-summary__item-name">{{ item.product.name }}</div>
+                                <div class="checkout-summary__item-qty">{{ item.quantity }} шт. × <span class="price-display" data-price-uah="{{ item.product.price }}">{{ item.product.price }} ₴</span></div>
+                            </div>
+                            <div class="checkout-summary__item-price price-display" data-price-uah="{{ item.subtotal }}">{{ item.subtotal }} ₴</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="checkout-summary__divider"></div>
+
+                    <div class="checkout-summary__row">
+                        <span data-i18n="checkout.items">Товарів:</span>
+                        <span>{{ cart_items|length }}</span>
+                    </div>
+                    <div class="checkout-summary__row">
+                        <span data-i18n="checkout.delivery.cost">Доставка:</span>
+                        <span class="text-muted" data-i18n="checkout.delivery.tariff">За тарифами</span>
+                    </div>
+                    <div class="checkout-summary__row checkout-summary__row--total">
+                        <span data-i18n="checkout.total">Разом:</span>
+                        <span class="checkout-summary__total-value price-display" data-price-uah="{{ total }}">{{ total }} ₴</span>
+                    </div>
+
+                    <button type="submit" class="btn btn--primary btn--lg checkout-summary__submit" id="checkout-submit" data-i18n="checkout.submit">
+                        ✅ Підтвердити замовлення
+                    </button>
+
+                    <div class="checkout-summary__note" data-i18n="checkout.agree">
+                        Натискаючи кнопку, ви погоджуєтесь з умовами використання сервісу
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/js/intlTelInput.min.js"></script>
+<script>
+/* ── Intl Tel Input ── */
+const phoneInput = document.querySelector("#phone");
+const iti = window.intlTelInput(phoneInput, {
+    preferredCountries: ["ua", "pl", "cz", "de", "us"],
+    utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/js/utils.js",
+    autoInsertDialCode: true,
+    nationalMode: false
+});
+
+/* ── Delivery Service Switching ── */
+function switchDelivery(service) {
+    const npBlock = document.getElementById('delivery-block-np');
+    const pplBlock = document.getElementById('delivery-block-ppl');
+    const meestBlock = document.getElementById('delivery-block-meest');
+    const optNp = document.getElementById('delivery-opt-np');
+    const optPpl = document.getElementById('delivery-opt-ppl');
+    const optMeest = document.getElementById('delivery-opt-meest');
+
+    // Reset displays and active classes
+    [npBlock, pplBlock, meestBlock].forEach(el => el.style.display = 'none');
+    [optNp, optPpl, optMeest].forEach(el => el.classList.remove('delivery-option--active'));
+
+    if (service === 'nova_poshta') {
+        npBlock.style.display = '';
+        optNp.classList.add('delivery-option--active');
+    } else if (service === 'ppl') {
+        pplBlock.style.display = '';
+        optPpl.classList.add('delivery-option--active');
+    } else if (service === 'meest') {
+        meestBlock.style.display = '';
+        optMeest.classList.add('delivery-option--active');
+    }
+}
+
+/* ── Payment Method Switching ── */
+function switchPayment(method) {
+    const optBank = document.getElementById('payment-opt-bank');
+    const optPaypal = document.getElementById('payment-opt-paypal');
+    const optCard = document.getElementById('payment-opt-card');
+    const optCod = document.getElementById('payment-opt-cod');
+
+    [optBank, optPaypal, optCard, optCod].forEach(el => {
+        if (el) el.classList.remove('delivery-option--active');
+    });
+
+    if (method === 'bank' && optBank) optBank.classList.add('delivery-option--active');
+    if (method === 'paypal' && optPaypal) optPaypal.classList.add('delivery-option--active');
+    if (method === 'card' && optCard) optCard.classList.add('delivery-option--active');
+    if (method === 'cod' && optCod) optCod.classList.add('delivery-option--active');
+}
+
+/* ── PPL Parcel Shop Data (Static) ── */
+const PPL_DATA = {
+    "Praha": [
+        "PPL ParcelShop Praha 1 — Národní 25",
+        "PPL ParcelShop Praha 2 — Rumunská 12",
+        "PPL ParcelShop Praha 3 — Koněvova 130",
+        "PPL ParcelShop Praha 4 — Budějovická 1",
+        "PPL ParcelShop Praha 5 — Plzeňská 233",
+        "PPL ParcelShop Praha 6 — Dejvická 40",
+        "PPL ParcelShop Praha 8 — Sokolovská 352",
+        "PPL ParcelShop Praha 10 — Vršovická 68"
+    ],
+    "Brno": [
+        "PPL ParcelShop Brno — Česká 30",
+        "PPL ParcelShop Brno — Dornych 47",
+        "PPL ParcelShop Brno-Královo Pole — Palackého třída 12"
+    ],
+    "Ostrava": [
+        "PPL ParcelShop Ostrava — Nádražní 144",
+        "PPL ParcelShop Ostrava-Poruba — Hlavní třída 850"
+    ],
+    "Plzeň": [
+        "PPL ParcelShop Plzeň — Americká 52",
+        "PPL ParcelShop Plzeň — Klatovská 90"
+    ],
+    "Liberec": [
+        "PPL ParcelShop Liberec — Pražská 15"
+    ],
+    "Olomouc": [
+        "PPL ParcelShop Olomouc — Horní náměstí 20",
+        "PPL ParcelShop Olomouc — Legionářská 8"
+    ],
+    "České Budějovice": [
+        "PPL ParcelShop Č. Budějovice — Lannova 22"
+    ],
+    "Hradec Králové": [
+        "PPL ParcelShop Hradec Králové — Baťkovo nám. 5"
+    ],
+    "Pardubice": [
+        "PPL ParcelShop Pardubice — Třída Míru 72"
+    ],
+    "Zlín": [
+        "PPL ParcelShop Zlín — Náměstí Míru 12"
+    ],
+    "Warszawa": [
+        "PPL ParcelShop Warszawa Centrum — Marszałkowska 84",
+        "PPL ParcelShop Warszawa Mokotów — Puławska 145",
+        "PPL ParcelShop Warszawa Praga — Targowa 56",
+        "PPL ParcelShop Warszawa Wola — Wolska 120"
+    ],
+    "Kraków": [
+        "PPL ParcelShop Kraków — Floriańska 30",
+        "PPL ParcelShop Kraków — Wielicka 72",
+        "PPL ParcelShop Kraków-Nowa Huta — os. Centrum B 5"
+    ],
+    "Wrocław": [
+        "PPL ParcelShop Wrocław — Świdnicka 28",
+        "PPL ParcelShop Wrocław — Legnicka 55"
+    ],
+    "Poznań": [
+        "PPL ParcelShop Poznań — Św. Marcin 65",
+        "PPL ParcelShop Poznań — Głogowska 32"
+    ],
+    "Gdańsk": [
+        "PPL ParcelShop Gdańsk — Długa 81",
+        "PPL ParcelShop Gdańsk-Wrzeszcz — Grunwaldzka 120"
+    ],
+    "Łódź": [
+        "PPL ParcelShop Łódź — Piotrkowska 104",
+        "PPL ParcelShop Łódź — Piłsudskiego 37"
+    ],
+    "Katowice": [
+        "PPL ParcelShop Katowice — 3 Maja 30"
+    ],
+    "Bratislava": [
+        "PPL ParcelShop Bratislava — Obchodná 48",
+        "PPL ParcelShop Bratislava — Prievozská 14",
+        "PPL ParcelShop Bratislava-Petržalka — Námestie SNP 3"
+    ],
+    "Košice": [
+        "PPL ParcelShop Košice — Hlavná 75",
+        "PPL ParcelShop Košice — Trieda SNP 30"
+    ],
+    "Žilina": [
+        "PPL ParcelShop Žilina — Národná 12"
+    ],
+    "Banská Bystrica": [
+        "PPL ParcelShop B. Bystrica — Námestie SNP 18"
+    ],
+    "Nitra": [
+        "PPL ParcelShop Nitra — Štefánikova 60"
+    ]
+};
+
+const PPL_CITIES = Object.keys(PPL_DATA);
+
+/* ── PPL City Search ── */
+let pplCityTimeout = null;
+const pplCityInput = document.getElementById('ppl_city_input');
+const pplCityDropdown = document.getElementById('ppl-city-dropdown');
+const pplCityHidden = document.getElementById('ppl_city');
+const pplPointSelect = document.getElementById('ppl_point_select');
+const pplPointHidden = document.getElementById('ppl_point');
+
+if (pplCityInput) {
+    pplCityInput.addEventListener('input', function() {
+        clearTimeout(pplCityTimeout);
+        const query = this.value.trim().toLowerCase();
+
+        pplCityHidden.value = '';
+        pplPointSelect.innerHTML = '<option value="">— Спочатку оберіть місто —</option>';
+        pplPointSelect.disabled = true;
+        pplPointHidden.value = '';
+
+        if (query.length < 1) {
+            pplCityDropdown.innerHTML = '';
+            pplCityDropdown.classList.remove('open');
+            return;
+        }
+
+        pplCityTimeout = setTimeout(function() {
+            const matches = PPL_CITIES.filter(c => c.toLowerCase().includes(query));
+            pplCityDropdown.innerHTML = '';
+
+            if (matches.length > 0) {
+                matches.forEach(function(city) {
+                    const div = document.createElement('div');
+                    div.className = 'np-autocomplete__item';
+                    div.textContent = city;
+                    div.addEventListener('click', function() {
+                        pplCityInput.value = city;
+                        pplCityHidden.value = city;
+                        pplCityDropdown.innerHTML = '';
+                        pplCityDropdown.classList.remove('open');
+                        loadPplPoints(city);
+                    });
+                    pplCityDropdown.appendChild(div);
+                });
+                pplCityDropdown.classList.add('open');
+            } else {
+                const div = document.createElement('div');
+                div.className = 'np-autocomplete__item np-autocomplete__item--empty';
+                div.textContent = 'Місто не знайдено';
+                pplCityDropdown.appendChild(div);
+                pplCityDropdown.classList.add('open');
+            }
+        }, 150);
+    });
+}
+
+// Close PPL dropdown on outside click
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#ppl-city-wrapper')) {
+        if (pplCityDropdown) pplCityDropdown.classList.remove('open');
+    }
+});
+
+function loadPplPoints(city) {
+    const points = PPL_DATA[city] || [];
+    pplPointSelect.innerHTML = '';
+    if (points.length > 0) {
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '— Оберіть пункт видачі —';
+        pplPointSelect.appendChild(defaultOpt);
+        points.forEach(function(p) {
+            const option = document.createElement('option');
+            option.value = p;
+            option.textContent = p;
+            pplPointSelect.appendChild(option);
+        });
+        pplPointSelect.disabled = false;
+    } else {
+        pplPointSelect.innerHTML = '<option value="">Пункти видачі не знайдені</option>';
+    }
+}
+
+if (pplPointSelect) {
+    pplPointSelect.addEventListener('change', function() {
+        pplPointHidden.value = this.value;
+    });
+}
+
+/* ── Nova Poshta City Autocomplete ── */
+let npCityTimeout = null;
+const cityInput = document.getElementById('np_city_input');
+const cityDropdown = document.getElementById('np-city-dropdown');
+const cityHidden = document.getElementById('np_city');
+const cityRefHidden = document.getElementById('np_city_ref');
+const warehouseSelect = document.getElementById('np_warehouse_select');
+const warehouseHidden = document.getElementById('np_warehouse');
+const warehouseRefHidden = document.getElementById('np_warehouse_ref');
+const warehouseLoading = document.getElementById('np-warehouse-loading');
+
+cityInput.addEventListener('input', function() {
+    clearTimeout(npCityTimeout);
+    const query = this.value.trim();
+
+    // Clear hidden fields when typing
+    cityHidden.value = '';
+    cityRefHidden.value = '';
+    warehouseSelect.innerHTML = '<option value="">— Спочатку оберіть місто —</option>';
+    warehouseSelect.disabled = true;
+    warehouseHidden.value = '';
+    warehouseRefHidden.value = '';
+
+    if (query.length < 2) {
+        cityDropdown.innerHTML = '';
+        cityDropdown.classList.remove('open');
+        return;
+    }
+
+    npCityTimeout = setTimeout(function() {
+        fetch('/api/np/cities/?q=' + encodeURIComponent(query))
+            .then(r => r.json())
+            .then(data => {
+                cityDropdown.innerHTML = '';
+                if (data.cities && data.cities.length > 0) {
+                    data.cities.forEach(function(city) {
+                        const div = document.createElement('div');
+                        div.className = 'np-autocomplete__item';
+                        div.textContent = city.name;
+                        div.addEventListener('click', function() {
+                            cityInput.value = city.name;
+                            cityHidden.value = city.name;
+                            cityRefHidden.value = city.ref;
+                            cityDropdown.innerHTML = '';
+                            cityDropdown.classList.remove('open');
+                            loadWarehouses(city.ref);
+                        });
+                        cityDropdown.appendChild(div);
+                    });
+                    cityDropdown.classList.add('open');
+                } else {
+                    const div = document.createElement('div');
+                    div.className = 'np-autocomplete__item np-autocomplete__item--empty';
+                    div.textContent = 'Місто не знайдено';
+                    cityDropdown.appendChild(div);
+                    cityDropdown.classList.add('open');
+                }
+            })
+            .catch(() => {
+                cityDropdown.innerHTML = '';
+                cityDropdown.classList.remove('open');
+            });
+    }, 300);
+});
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#np-city-wrapper')) {
+        cityDropdown.classList.remove('open');
+    }
+});
+
+/* ── Load Warehouses ── */
+function loadWarehouses(cityRef) {
+    warehouseSelect.innerHTML = '<option value="">Завантаження...</option>';
+    warehouseSelect.disabled = true;
+    warehouseLoading.style.display = 'flex';
+
+    fetch('/api/np/warehouses/?city_ref=' + encodeURIComponent(cityRef))
+        .then(r => r.json())
+        .then(data => {
+            warehouseLoading.style.display = 'none';
+            warehouseSelect.innerHTML = '<option value="">— Оберіть відділення —</option>';
+            if (data.warehouses && data.warehouses.length > 0) {
+                data.warehouses.forEach(function(w) {
+                    const option = document.createElement('option');
+                    option.value = w.ref;
+                    option.textContent = w.name;
+                    option.dataset.name = w.name;
+                    warehouseSelect.appendChild(option);
+                });
+                warehouseSelect.disabled = false;
+            } else {
+                warehouseSelect.innerHTML = '<option value="">Відділення не знайдені</option>';
+            }
+        })
+        .catch(() => {
+            warehouseLoading.style.display = 'none';
+            warehouseSelect.innerHTML = '<option value="">Помилка завантаження</option>';
+        });
+}
+
+warehouseSelect.addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    if (selected && selected.value) {
+        warehouseHidden.value = selected.dataset.name || selected.textContent;
+        warehouseRefHidden.value = selected.value;
+    } else {
+        warehouseHidden.value = '';
+        warehouseRefHidden.value = '';
+    }
+});
+
+/* ── Form Validation ── */
+document.getElementById('checkout-form').addEventListener('submit', function(e) {
+    const service = document.querySelector('input[name="delivery_service"]:checked').value;
+
+    if (service === 'nova_poshta') {
+        if (!cityHidden.value) {
+            e.preventDefault();
+            alert(window.getI18nText ? window.getI18nText('msg.checkout.error.np_city') : 'Будь ласка, оберіть місто зі списку');
+            cityInput.focus();
+            return;
+        }
+        if (!warehouseHidden.value) {
+            e.preventDefault();
+            alert(window.getI18nText ? window.getI18nText('msg.checkout.error.np_warehouse') : 'Будь ласка, оберіть відділення Нової Пошти');
+            warehouseSelect.focus();
+            return;
+        }
+    } else if (service === 'ppl') {
+        if (!pplCityHidden.value) {
+            e.preventDefault();
+            alert(window.getI18nText ? window.getI18nText('msg.checkout.error.ppl_city') : 'Будь ласка, оберіть місто PPL');
+            pplCityInput.focus();
+            return;
+        }
+        if (!pplPointHidden.value) {
+            e.preventDefault();
+            alert(window.getI18nText ? window.getI18nText('msg.checkout.error.ppl_point') : 'Будь ласка, оберіть пункт видачі PPL');
+            pplPointSelect.focus();
+            return;
+        }
+    } else if (service === 'meest') {
+        if (!document.getElementById('meest_country').value.trim()) {
+            e.preventDefault();
+            alert(window.getI18nText ? window.getI18nText('msg.checkout.error.meest_country') : 'Будь ласка, введіть країну');
+            document.getElementById('meest_country').focus();
+            return;
+        }
+        if (!document.getElementById('meest_city').value.trim()) {
+            e.preventDefault();
+            alert(window.getI18nText ? window.getI18nText('msg.checkout.error.meest_city') : 'Будь ласка, введіть місто');
+            document.getElementById('meest_city').focus();
+            return;
+        }
+        if (!document.getElementById('meest_address').value.trim()) {
+            e.preventDefault();
+            alert(window.getI18nText ? window.getI18nText('msg.checkout.error.meest_address') : 'Будь ласка, введіть адресу');
+            document.getElementById('meest_address').focus();
+            return;
+        }
+    }
+
+    // Set phone to the full international format
+    if (iti.isValidNumber()) {
+        phoneInput.value = iti.getNumber();
+    }
+});
+
+/* ── Restore state ── */
+document.addEventListener('DOMContentLoaded', function() {
+    const checkedService = document.querySelector('input[name="delivery_service"]:checked');
+    if (checkedService) {
+        switchDelivery(checkedService.value);
+    }
+    const checkedPayment = document.querySelector('input[name="payment_method"]:checked');
+    if (checkedPayment) {
+        switchPayment(checkedPayment.value);
+    }
+});
+</script>
+{% endblock %}

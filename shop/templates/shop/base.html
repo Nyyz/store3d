@@ -1,0 +1,291 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Store3D — Інтернет-магазин ексклюзивних 3D-друкованих фігурок. Колекційні фігурки героїв ігор, аніме та фентезі.">
+    <title>{% block title %}Store3D — 3D-друковані фігурки{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'shop/css/styles.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <a href="{% url 'shop:home' %}" class="navbar__logo">
+                <span class="navbar__logo-icon">🎲</span>
+                <span class="navbar__logo-text">Store3D</span>
+            </a>
+
+            <div class="navbar__links" id="nav-links">
+                <a href="{% url 'shop:home' %}" class="navbar__link {% if request.resolver_match.url_name == 'home' %}navbar__link--active{% endif %}" data-i18n="nav.home">Головна</a>
+                <a href="{% url 'shop:catalog' %}" class="navbar__link {% if request.resolver_match.url_name == 'catalog' %}navbar__link--active{% endif %}" data-i18n="nav.catalog">Каталог</a>
+                <a href="{% url 'shop:cart' %}" class="navbar__link navbar__link--cart" data-i18n="nav.cart">
+                    🛒 Кошик
+                    <span class="navbar__cart-badge {% if cart_count > 0 %}visible{% endif %}" id="cart-badge">{{ cart_count }}</span>
+                </a>
+
+                {% if user.is_authenticated %}
+                    {% if user.is_staff %}
+                        <a href="{% url 'chat:admin_chat' %}" class="navbar__link {% if request.resolver_match.url_name == 'admin_chat' %}navbar__link--active{% endif %}" data-i18n="nav.chats">💬 Чати</a>
+                    {% endif %}
+                    <a href="{% url 'shop:profile' %}" class="navbar__link {% if request.resolver_match.url_name == 'profile' %}navbar__link--active{% endif %}">👤 {{ user.first_name|default:user.email }}</a>
+                    <a href="{% url 'shop:logout' %}" class="navbar__link" data-i18n="nav.logout">Вийти</a>
+                {% else %}
+                    <div class="navbar__auth" id="nav-auth">
+                        <a href="{% url 'shop:login' %}" class="btn btn--ghost btn--sm" data-i18n="nav.login">Увійти</a>
+                        <a href="{% url 'shop:register' %}" class="btn btn--primary btn--sm" data-i18n="nav.register">Реєстрація</a>
+                    </div>
+                {% endif %}
+
+                <!-- Language Switcher -->
+                <div class="lang-switcher" id="lang-switcher">
+                    <button class="lang-switcher__btn" onclick="toggleLangDropdown(event)" title="Change language">
+                        <span id="lang-current-flag">🇺🇦</span>
+                        <span class="lang-switcher__arrow">▾</span>
+                    </button>
+                    <div class="lang-switcher__dropdown" id="lang-dropdown">
+                        <div class="lang-option lang-option--active" data-lang="uk" onclick="setLanguage('uk')">🇺🇦 Українська</div>
+                        <div class="lang-option" data-lang="en" onclick="setLanguage('en')">🇬🇧 English</div>
+                        <div class="lang-option" data-lang="de" onclick="setLanguage('de')">🇩🇪 Deutsch</div>
+                        <div class="lang-option" data-lang="pl" onclick="setLanguage('pl')">🇵🇱 Polski</div>
+                        <div class="lang-option" data-lang="cs" onclick="setLanguage('cs')">🇨🇿 Čeština</div>
+                        <div class="lang-option" data-lang="es" onclick="setLanguage('es')">🇪🇸 Español</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="navbar__burger" id="nav-burger" onclick="this.classList.toggle('active'); document.getElementById('nav-links').classList.toggle('mobile-open');">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages" id="messages">
+        {% for message in messages %}
+        <div class="message message--{{ message.tags }}">
+            {% if message.tags == 'success' %}✅{% elif message.tags == 'error' %}❌{% else %}ℹ️{% endif %}
+            <span data-i18n="{{ message }}">{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer__grid">
+                <div>
+                    <div class="footer__brand-name">🎲 Store3D</div>
+                    <p class="footer__brand-desc" data-i18n="footer.brand">
+                        Ексклюзивні колекційні фігурки, створені за допомогою технологій 3D-друку.
+                        Кожна фігурка — унікальний витвір мистецтва.
+                    </p>
+                </div>
+                <div>
+                    <div class="footer__col-title" data-i18n="footer.nav">Навігація</div>
+                    <div class="footer__links">
+                        <a href="{% url 'shop:home' %}" class="footer__link" data-i18n="nav.home">Головна</a>
+                        <a href="{% url 'shop:catalog' %}" class="footer__link" data-i18n="nav.catalog">Каталог</a>
+                        <a href="{% url 'shop:cart' %}" class="footer__link">🛒 Кошик</a>
+                    </div>
+                </div>
+                <div>
+                    <div class="footer__col-title" data-i18n="footer.account">Акаунт</div>
+                    <div class="footer__links">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'shop:profile' %}" class="footer__link" data-i18n="footer.profile">Профіль</a>
+                            <a href="{% url 'shop:logout' %}" class="footer__link" data-i18n="nav.logout">Вийти</a>
+                        {% else %}
+                            <a href="{% url 'shop:login' %}" class="footer__link" data-i18n="nav.login">Увійти</a>
+                            <a href="{% url 'shop:register' %}" class="footer__link" data-i18n="nav.register">Реєстрація</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="footer__bottom" data-i18n="footer.copyright">
+                &copy; 2026 Store3D. Всі права захищені.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chat Widget (для клієнтів — не для адмінів) -->
+    {% if not user.is_staff %}
+    <div class="chat-widget" id="chat-widget">
+        <button class="chat-widget__toggle" id="chat-toggle" onclick="toggleChat()">
+            <span class="chat-widget__toggle-icon" id="chat-toggle-icon">💬</span>
+            <span class="chat-widget__unread" id="chat-unread" style="display:none">0</span>
+        </button>
+
+        <div class="chat-widget__window" id="chat-window">
+            <div class="chat-widget__header">
+                <div class="chat-widget__header-info">
+                    <div class="chat-widget__header-status">
+                        <span class="chat-widget__status-dot"></span>
+                        <span data-i18n="chat.support">Підтримка Store3D</span>
+                    </div>
+                    <div class="chat-widget__header-sub" data-i18n="chat.response">Зазвичай відповідаємо за кілька хвилин</div>
+                </div>
+                <button class="chat-widget__close" onclick="toggleChat()">✕</button>
+            </div>
+
+            <div class="chat-widget__messages" id="chat-messages">
+                <div class="chat-widget__welcome">
+                    <div class="chat-widget__welcome-icon">👋</div>
+                    <div class="chat-widget__welcome-text" data-i18n="chat.welcome">Привіт! Чим ми можемо допомогти?</div>
+                </div>
+                <!-- Quick Reply Buttons -->
+                <div class="chat-widget__quick-replies" id="chat-quick-replies">
+                    <button class="chat-quick-btn" data-i18n="chat.quick.status" onclick="sendQuickReply(this)">📦 Який статус мого замовлення?</button>
+                    <button class="chat-quick-btn" data-i18n="chat.quick.shipping" onclick="sendQuickReply(this)">🚚 Скільки коштує доставка?</button>
+                    <button class="chat-quick-btn" data-i18n="chat.quick.international" onclick="sendQuickReply(this)">🌍 Чи є міжнародна доставка?</button>
+                    <button class="chat-quick-btn" data-i18n="chat.quick.payment" onclick="sendQuickReply(this)">💳 Які способи оплати?</button>
+                    <button class="chat-quick-btn" data-i18n="chat.quick.return" onclick="sendQuickReply(this)">🔄 Як повернути товар?</button>
+                    <button class="chat-quick-btn" data-i18n="chat.quick.time" onclick="sendQuickReply(this)">⏰ Скільки чекати на доставку?</button>
+                </div>
+            </div>
+
+            <div class="chat-widget__input-area">
+                <input type="text" class="chat-widget__input" id="chat-input" data-i18n-placeholder="chat.placeholder" placeholder="Напишіть повідомлення..." autocomplete="off" onkeydown="if(event.key==='Enter')sendChatMessage()">
+                <button class="chat-widget__send" id="chat-send" onclick="sendChatMessage()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    /* ── Customer Chat Widget ── */
+    let chatSocket = null;
+    let chatOpen = false;
+
+    function toggleChat() {
+        const win = document.getElementById('chat-window');
+        const icon = document.getElementById('chat-toggle-icon');
+        chatOpen = !chatOpen;
+        win.classList.toggle('open', chatOpen);
+        icon.textContent = chatOpen ? '✕' : '💬';
+        if (chatOpen && !chatSocket) {
+            connectChat();
+        }
+        if (chatOpen) {
+            document.getElementById('chat-unread').style.display = 'none';
+            const msgs = document.getElementById('chat-messages');
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+    }
+
+    function connectChat() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        chatSocket = new WebSocket(protocol + '//' + window.location.host + '/ws/chat/customer/');
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.type === 'history') {
+                const msgs = document.getElementById('chat-messages');
+                // Keep welcome message, hide quick replies if there are messages
+                if (data.messages.length > 0) {
+                    const welcome = msgs.querySelector('.chat-widget__welcome');
+                    if (welcome) welcome.remove();
+                    hideQuickReplies();
+                }
+                data.messages.forEach(function(m) {
+                    appendMessage(m.message, m.sender_type, m.timestamp);
+                });
+                msgs.scrollTop = msgs.scrollHeight;
+            } else if (data.type === 'message') {
+                appendMessage(data.message, data.sender_type, data.timestamp);
+                const msgs = document.getElementById('chat-messages');
+                msgs.scrollTop = msgs.scrollHeight;
+                if (!chatOpen && data.sender_type === 'admin') {
+                    const badge = document.getElementById('chat-unread');
+                    let count = parseInt(badge.textContent) || 0;
+                    badge.textContent = count + 1;
+                    badge.style.display = 'flex';
+                }
+            }
+        };
+
+        chatSocket.onclose = function() {
+            chatSocket = null;
+            setTimeout(connectChat, 3000);
+        };
+    }
+
+    function appendMessage(text, senderType, timestamp) {
+        const msgs = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = 'chat-msg chat-msg--' + senderType;
+        div.innerHTML =
+            '<div class="chat-msg__bubble">' + escapeHtml(text) + '</div>' +
+            '<div class="chat-msg__time">' + (timestamp || '') + '</div>';
+        msgs.appendChild(div);
+    }
+
+    function sendChatMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text || !chatSocket) return;
+        chatSocket.send(JSON.stringify({message: text}));
+        input.value = '';
+        hideQuickReplies();
+    }
+
+    function sendQuickReply(btn) {
+        const text = btn.textContent.trim();
+        if (!text || !chatSocket) {
+            // If not connected yet, connect first then send
+            if (!chatSocket) connectChat();
+            setTimeout(function() {
+                if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                    chatSocket.send(JSON.stringify({message: text}));
+                    hideQuickReplies();
+                }
+            }, 500);
+            return;
+        }
+        chatSocket.send(JSON.stringify({message: text}));
+        hideQuickReplies();
+    }
+
+    function hideQuickReplies() {
+        const qr = document.getElementById('chat-quick-replies');
+        if (qr) {
+            qr.style.opacity = '0';
+            qr.style.transform = 'translateY(-10px)';
+            setTimeout(function() { qr.style.display = 'none'; }, 300);
+        }
+        // Also hide welcome message
+        const welcome = document.querySelector('.chat-widget__welcome');
+        if (welcome) welcome.remove();
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // Auto-connect on page load so we can receive admin replies
+    document.addEventListener('DOMContentLoaded', function() {
+        connectChat();
+    });
+    </script>
+    {% endif %}
+
+    <script src="{% static 'shop/js/i18n.js' %}"></script>
+    <script src="{% static 'shop/js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

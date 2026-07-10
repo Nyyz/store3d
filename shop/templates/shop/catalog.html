@@ -1,0 +1,105 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Каталог — Store3D{% endblock %}
+
+{% block content %}
+<section class="section catalog-header">
+    <div class="container">
+        <h1 class="catalog-header__title" data-i18n="catalog.title">Каталог фігурок</h1>
+        <p class="catalog-header__count">
+            {% if query %}
+                Знайдено {{ products|length }} результат{{ products|length|pluralize:"ів,ів" }} за запитом «{{ query }}»
+            {% else %}
+                {{ products|length }} товар{{ products|length|pluralize:"ів,ів" }} у каталозі
+            {% endif %}
+        </p>
+    </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+    <div class="container">
+        <!-- Toolbar: Search + Sort -->
+        <div class="catalog-toolbar">
+            <form class="catalog-search" method="get" action="{% url 'shop:catalog' %}">
+                <span class="catalog-search__icon">🔍</span>
+                <input
+                    type="text"
+                    name="q"
+                    value="{{ query }}"
+                    data-i18n-placeholder="catalog.search"
+                    placeholder="Пошук фігурок..."
+                    class="catalog-search__input"
+                    id="catalog-search-input"
+                >
+                {% if sort != 'newest' %}
+                <input type="hidden" name="sort" value="{{ sort }}">
+                {% endif %}
+            </form>
+            <div class="catalog-sort">
+                <span class="catalog-sort__label" data-i18n="catalog.sort">Сортувати:</span>
+                <select class="catalog-sort__select" id="catalog-sort" onchange="window.location.href='{% url 'shop:catalog' %}?sort=' + this.value + '{% if query %}&q={{ query }}{% endif %}'">
+                    <option value="newest" {% if sort == 'newest' %}selected{% endif %} data-i18n="catalog.sort.newest">Новинки</option>
+                    <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %} data-i18n="catalog.sort.price_asc">Ціна: від низької</option>
+                    <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %} data-i18n="catalog.sort.price_desc">Ціна: від високої</option>
+                    <option value="name" {% if sort == 'name' %}selected{% endif %} data-i18n="catalog.sort.name">За назвою</option>
+                </select>
+            </div>
+        </div>
+
+        {% if products %}
+        <div class="products-grid">
+            {% for product in products %}
+            <div class="product-card reveal" style="transition-delay: {{ forloop.counter0|divisibleby:3 }}00ms;">
+                <a href="{% url 'shop:product_detail' product.pk %}">
+                    <div class="product-card__image-wrap">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card__image" loading="lazy">
+                        {% else %}
+                            <div class="product-card__image-placeholder">🎲</div>
+                        {% endif %}
+                        {% if product.stock > 5 %}
+                            <span class="product-card__stock-badge product-card__stock-badge--in-stock" data-i18n="product.instock">В наявності</span>
+                        {% elif product.stock > 0 %}
+                            <span class="product-card__stock-badge product-card__stock-badge--low-stock">Залишилось {{ product.stock }} шт.</span>
+                        {% else %}
+                            <span class="product-card__stock-badge product-card__stock-badge--out-of-stock" data-i18n="product.outofstock">Немає в наявності</span>
+                        {% endif %}
+                    </div>
+                </a>
+                <div class="product-card__body">
+                    <h3 class="product-card__name">
+                        <a href="{% url 'shop:product_detail' product.pk %}">{{ product.name }}</a>
+                    </h3>
+                    <p class="product-card__description">{{ product.description|truncatechars:100 }}</p>
+                    <div class="product-card__footer">
+                        <span class="product-card__price"><span class="price-display" data-price-uah="{{ product.price }}">{{ product.price }}</span> ₴</span>
+                        {% if product.stock > 0 %}
+                        <button class="product-card__add-btn" data-product-id="{{ product.pk }}" onclick="addToCart({{ product.pk }})" title="Додати до кошика">
+                            +
+                        </button>
+                        {% else %}
+                        <button class="product-card__add-btn" disabled title="Немає в наявності">✕</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="catalog-empty">
+            <div class="catalog-empty__icon">🔍</div>
+            <p class="catalog-empty__text">
+                {% if query %}
+                    Нічого не знайдено за запитом «{{ query }}». Спробуйте інший запит.
+                {% else %}
+                    <span data-i18n="catalog.empty">Каталог поки порожній. Зовсім скоро тут зʼявляться чудові фігурки!</span>
+                {% endif %}
+            </p>
+            {% if query %}
+            <a href="{% url 'shop:catalog' %}" class="btn btn--primary" data-i18n="catalog.reset">Скинути пошук</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
