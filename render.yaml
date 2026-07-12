@@ -1,0 +1,24 @@
+databases:
+  - name: store3d-db
+    databaseName: store3d
+    user: store3d_user
+    plan: free
+
+services:
+  - type: web
+    name: store3d-web
+    env: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "daphne store3d.asgi:application --port $PORT --bind 0.0.0.0"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: store3d-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.11.8"
