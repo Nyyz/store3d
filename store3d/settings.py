@@ -193,7 +193,16 @@ LOGIN_REDIRECT_URL = '/'
 ADMIN_URL = env('DJANGO_ADMIN_URL')
 
 # CSRF
-CSRF_TRUSTED_ORIGINS = ['https://*.trycloudflare.com', 'https://*.serveusercontent.com', 'https://*.lhr.life', 'https://*.pinggy-free.link', 'https://*.free.pinggy.net', 'https://*.fly.dev', 'https://*.onrender.com']
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.trycloudflare.com',
+    'https://*.serveusercontent.com',
+    'https://*.lhr.life',
+    'https://*.pinggy-free.link',
+    'https://*.free.pinggy.net',
+    'https://*.fly.dev',
+    'https://*.onrender.com',
+    'https://*.koyeb.app',  # Koyeb hosting
+]
 
 # Django Channels (ASGI)
 ASGI_APPLICATION = 'store3d.asgi.application'

@@ -19,11 +19,14 @@ COPY . .
 # Робимо скрипт запуску виконуваним
 RUN chmod +x /app/entrypoint.sh
 
-# Збираємо статичні файли
-RUN python manage.py collectstatic --noinput
+# Збираємо статичні файли (потрібен тимчасовий SECRET_KEY для build-часу)
+RUN SECRET_KEY=build-time-dummy-secret-key \
+    DEBUG=False \
+    DJANGO_SECURE=False \
+    python manage.py collectstatic --noinput
 
-# Відкриваємо порт
-EXPOSE 8000
+# Відкриваємо порт (Koyeb використовує 8080 за замовчуванням)
+EXPOSE 8080
 
 # Запускаємо через entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]

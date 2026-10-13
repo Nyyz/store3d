@@ -13,3 +13,8 @@ venv.bak/
 db.sqlite3
 media/
 staticfiles/
+# Cloudflare tunnel binary - not needed in Docker
+cloudflared
+# Fly.io / Render specific
+fly.toml
+render.yaml
